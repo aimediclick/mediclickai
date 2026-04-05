@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediClick AI — Plataforma Médica</title>
+<meta name="description" content="Un SaaS que te permite llevar de manera práctica el control de citas, expedientes clínicos, accesos por roles, ingresos con IA y mucho más.">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:        #020B18;
+    --cyan:        #5bc8e8;
+    --cyan-bright: #3db8d8;
+    --white:       #ffffff;
+    --white-40:    rgba(255,255,255,0.4);
+  }
+
+  html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: var(--navy);
+    color: var(--white);
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow-x: hidden;
+    padding: 0;
+  }
+
+  /* ── FONDO ── */
+  .bg-base {
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(13,34,64,0.95) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 80% 90%, rgba(9,22,42,0.9)  0%, transparent 60%),
+      radial-gradient(ellipse 100% 100% at 50% 50%, #020B18 0%, #061020 100%);
+    z-index: 0;
+  }
+
+  .bg-grid {
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(91,200,232,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(91,200,232,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    z-index: 1;
+  }
+
+  .orb {
+    position: fixed; border-radius: 50%;
+    filter: blur(80px); z-index: 1; pointer-events: none;
+  }
+  .orb-1 {
+    width: clamp(260px,40vw,500px); height: clamp(260px,40vw,500px);
+    background: radial-gradient(circle, rgba(91,200,232,0.10) 0%, transparent 70%);
+    top: -120px; right: -80px;
+    animation: orbFloat 12s ease-in-out infinite;
+  }
+  .orb-2 {
+    width: clamp(180px,28vw,350px); height: clamp(180px,28vw,350px);
+    background: radial-gradient(circle, rgba(13,34,64,0.6) 0%, rgba(61,184,216,0.05) 70%);
+    bottom: -60px; left: -60px;
+    animation: orbFloat 15s ease-in-out infinite reverse;
+  }
+  .orb-3 {
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(91,200,232,0.06) 0%, transparent 70%);
+    top: 40%; left: 10%;
+    animation: orbFloat 9s ease-in-out infinite 2s;
+  }
+  @keyframes orbFloat {
+    0%,100% { transform: translate(0,0); }
+    33%     { transform: translate(15px,-20px); }
+    66%     { transform: translate(-10px,10px); }
+  }
+
+  .particles { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
+  .particle {
+    position: absolute; border-radius: 50%;
+    background: var(--cyan); opacity: 0;
+    animation: particleFade var(--dur) ease-in-out infinite var(--delay);
+  }
+  @keyframes particleFade {
+    0%   { opacity: 0; transform: translateY(0); }
+    20%  { opacity: 0.6; }
+    80%  { opacity: 0.2; }
+    100% { opacity: 0; transform: translateY(-60px); }
+  }
+
+  .ekg-container {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: 60px; z-index: 2; opacity: 0.18; overflow: hidden;
+  }
+  .ekg-svg { width: 200%; height: 100%; animation: ekgScroll 5s linear infinite; }
+  @keyframes ekgScroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+
+  /* ── CONTENEDOR ── */
+  .container {
+    position: relative; z-index: 10;
+    text-align: center;
+    width: 100%;
+    max-width: 680px;
+    padding: clamp(32px,6vw,56px) clamp(20px,5vw,40px) clamp(48px,8vw,72px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── EKG ANIMATIONS ── */
+  @keyframes drawEKG {
+    0%   { stroke-dashoffset: 221; opacity: 1; }
+    70%  { stroke-dashoffset: 0; opacity: 1; }
+    100% { stroke-dashoffset: 0; opacity: 1; }
+  }
+  @keyframes ekgGlow {
+    0%   { stroke-dashoffset: 221; opacity: 0; }
+    10%  { opacity: 0.3; }
+    70%  { stroke-dashoffset: 0; opacity: 0.3; }
+    100% { stroke-dashoffset: 0; opacity: 0.3; }
+  }
+  @keyframes ekgPulse {
+    0%,60% { opacity: 0; transform-box: fill-box; transform-origin: center; transform: scale(0.3); }
+    70%    { opacity: 1; transform: scale(1.5); }
+    85%    { opacity: 1; transform: scale(1); }
+    100%   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes ekgDotCenter {
+    0%,60% { opacity: 0; }
+    70%    { opacity: 1; }
+    100%   { opacity: 1; }
+  }
+
+  .ekg-glow-line {
+    stroke-dasharray: 221; stroke-dashoffset: 221;
+    animation: ekgGlow 2.5s ease-in-out infinite;
+  }
+  .ekg-main-line {
+    stroke-dasharray: 221; stroke-dashoffset: 221;
+    animation: drawEKG 2.5s ease-in-out infinite;
+  }
+  .ekg-dot-halo  { animation: ekgPulse     2.5s ease-in-out infinite; }
+  .ekg-dot-fill  { animation: ekgPulse     2.5s ease-in-out infinite; }
+  .ekg-dot-white { animation: ekgDotCenter 2.5s ease-in-out infinite; }
+
+  /* ── LOGO ── */
+  .logo-wrap {
+    display: flex; align-items: center; justify-content: center;
+    gap: clamp(10px,3vw,16px);
+    margin-bottom: clamp(28px,5vw,44px);
+    animation: fadeUp 0.9s cubic-bezier(.16,1,.3,1) both;
+  }
+
+  .logo-svg {
+    width: clamp(72px,12vw,110px);
+    height: auto;
+    flex-shrink: 0;
+  }
+
+  .logo-wordmark { line-height: 1.1; text-align: left; }
+
+  .logo-title {
+    font-size: clamp(20px,4.5vw,30px);
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    line-height: 1;
+    color: #ffffff;
+  }
+
+  .gradient-text {
+    background: linear-gradient(90deg, #38BDF8, #67E8F9);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .logo-sub {
+    font-size: clamp(8px,1.8vw,10.5px);
+    font-weight: 600;
+    color: #38BDF8;
+    letter-spacing: 0.2em;
+    margin-top: 4px;
+  }
+
+  /* ── BADGE ── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(91,200,232,0.08);
+    border: 1px solid rgba(91,200,232,0.25);
+    border-radius: 100px;
+    padding: 5px 16px;
+    font-size: clamp(10px,2.2vw,11px);
+    font-weight: 600; color: var(--cyan);
+    letter-spacing: 0.06em; text-transform: uppercase;
+    margin-bottom: clamp(20px,4vw,28px);
+    animation: fadeUp 0.9s cubic-bezier(.16,1,.3,1) 0.1s both;
+  }
+  .badge-dot {
+    width: 5px; height: 5px;
+    background: var(--cyan); border-radius: 50%;
+    animation: pulseDot 2s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+  @keyframes pulseDot {
+    0%,100% { box-shadow: 0 0 0 0 rgba(91,200,232,0.4); }
+    50%     { box-shadow: 0 0 0 4px rgba(91,200,232,0); }
+  }
+
+  /* ── HERO ── */
+  h1 {
+    font-size: clamp(28px,6.5vw,56px);
+    font-weight: 800; line-height: 1.1;
+    letter-spacing: clamp(-0.5px,-0.08em,-1.5px);
+    margin-bottom: clamp(14px,3vw,20px);
+    animation: fadeUp 0.9s cubic-bezier(.16,1,.3,1) 0.2s both;
+  }
+  h1 em { font-style: normal; color: var(--cyan); }
+
+  .subtitle {
+    font-size: clamp(13px,2.8vw,15.5px);
+    font-weight: 400;
+    color: var(--white-40);
+    line-height: 1.75;
+    max-width: 480px;
+    margin: 0 auto clamp(28px,5vw,40px);
+    animation: fadeUp 0.9s cubic-bezier(.16,1,.3,1) 0.3s both;
+  }
+  .subtitle strong { color: rgba(255,255,255,0.75); font-weight: 500; }
+  .subtitle .todo {
+    display: block; margin-top: 10px;
+    font-weight: 700; color: #ffffff;
+    font-size: clamp(13px,2.8vw,15px);
+  }
+
+  /* ── COUNTDOWN ── */
+  .countdown {
+    display: flex; justify-content: center;
+    gap: clamp(6px,2vw,12px);
+    margin-bottom: clamp(28px,5vw,44px);
+    animation: fadeUp 0.9s cubic-bezier(.16,1,.3,1) 0.4s both;
+    flex-wrap: nowrap;
+  }
+  .countdown-item {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    padding: clamp(10px,2.5vw,16px) clamp(10px,2.5vw,18px);
+    min-width: clamp(58px,13vw,74px);
+    backdrop-filter: blur(20px);
+    transition: border-color .3s, background .3s;
+  }
+  .countdown-item:hover {
+    border-color: rgba(91,200,232,0.25);
+    background: rgba(91,200,232,0.05);
+  }
+  .countdown-num {
+    font-size: clamp(24px,5.5vw,34px);
+    font-weight: 800; color: #fff;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    display: block;
+  }
+  .countdown-label {
+    font-size: clamp(8px,1.6vw,9px);
+    font-weight: 600; color: var(--white-40);
+    text-transform: uppercase; letter-spacing: .12em;
+    margin-top: 5px; display: block;
+  }
+  .countdown-sep {
+    font-size: clamp(18px,4vw,26px);
+    font-weight: 300; color: rgba(255,255,255,0.2);
+    align-self: center; margin-top: -10px;
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink {
+    0%,100% { opacity: 1; }
+    50%     { opacity: 0.15; }
+  }
+
+  /* ── FORM ── */
+  .notify-form {
+    display: flex; gap: 8px;
+    width: 100%; max-width: 420px;
+    margin: 0 auto clamp(20px,4vw,28px);
+    animation: fadeUp 0.9s cubic-bezier(.16,1,.3,1) 0.5s both;
+  }
+  .notify-input {
+    flex: 1; min-width: 0;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 13px 16px;
+    font-size: clamp(13px,2.8vw,14px);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: #fff; outline: none;
+    transition: border-color .2s, background .2s;
+  }
+  .notify-input::placeholder { color: rgba(255,255,255,0.25); }
+  .notify-input:focus {
+    border-color: rgba(91,200,232,0.45);
+    background: rgba(91,200,232,0.05);
+  }
+  .notify-btn {
+    background: var(--cyan-bright); color: var(--navy);
+    border: none; border-radius: 10px;
+    padding: 13px clamp(14px,3vw,22px);
+    font-size: clamp(13px,2.8vw,14px);
+    font-weight: 700;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    cursor: pointer; white-space: nowrap;
+    transition: all .2s; letter-spacing: -0.2px;
+    flex-shrink: 0;
+  }
+  .notify-btn:hover {
+    background: var(--cyan); transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(91,200,232,0.25);
+  }
+  .notify-btn:active { transform: translateY(0); }
+
+  .success-msg {
+    display: none; color: var(--cyan);
+    font-size: 13px; font-weight: 600;
+    margin-bottom: 16px;
+    animation: fadeUp 0.4s ease-out both;
+  }
+
+  /* ── PILLS ── */
+  .features {
+    display: flex; flex-wrap: wrap; justify-content: center;
+    gap: clamp(6px,1.5vw,8px);
+    max-width: 520px;
+    animation: fadeUp 0.9s cubic-bezier(.16,1,.3,1) 0.6s both;
+  }
+  .feature-pill {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 100px;
+    padding: clamp(5px,1.2vw,7px) clamp(10px,2.5vw,14px);
+    font-size: clamp(11px,2.4vw,12px);
+    font-weight: 500; color: rgba(255,255,255,0.45);
+    transition: all .2s; cursor: default;
+  }
+  .feature-pill:hover {
+    border-color: rgba(91,200,232,0.25);
+    color: rgba(255,255,255,0.8);
+    background: rgba(91,200,232,0.06);
+  }
+  .feature-pill svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .footer-note {
+    position: fixed; bottom: 14px; left: 50%;
+    transform: translateX(-50%);
+    font-size: clamp(10px,2vw,11px);
+    color: rgba(255,255,255,0.18);
+    z-index: 10; white-space: nowrap; letter-spacing: .04em;
+  }
+
+  /* ── MOBILE ESPECÍFICO ── */
+  @media (max-width: 480px) {
+    .notify-form { flex-direction: column; }
+    .notify-btn  { width: 100%; padding: 14px; text-align: center; }
+    .countdown-sep { display: none; }
+    .countdown { gap: 8px; }
+    .orb-3 { display: none; }
+  }
+
+  /* ── TABLET ── */
+  @media (min-width: 481px) and (max-width: 768px) {
+    .container { max-width: 560px; }
+  }
+
+  /* ── DESKTOP GRANDE ── */
+  @media (min-width: 1200px) {
+    h1 { font-size: 58px; }
+    .subtitle { font-size: 16px; max-width: 520px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-base"></div>
+<div class="bg-grid"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+<div class="particles" id="particles"></div>
+
+<div class="ekg-container">
+  <svg class="ekg-svg" viewBox="0 0 1440 70" preserveAspectRatio="none" fill="none">
+    <path d="M0 35 L120 35 L150 35 L160 12 L170 58 L180 18 L190 50 L200 35 L240 35
+             L360 35 L390 35 L400 12 L410 58 L420 18 L430 50 L440 35 L480 35
+             L600 35 L630 35 L640 12 L650 58 L660 18 L670 50 L680 35 L720 35
+             L840 35 L870 35 L880 12 L890 58 L900 18 L910 50 L920 35 L960 35
+             L1080 35 L1110 35 L1120 12 L1130 58 L1140 18 L1150 50 L1160 35 L1200 35
+             L1320 35 L1350 35 L1360 12 L1370 58 L1380 18 L1390 50 L1400 35 L1440 35"
+      stroke="#5bc8e8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</div>
+
+<div class="container">
+
+  <!-- LOGO -->
+  <div class="logo-wrap">
+    <svg class="logo-svg" viewBox="0 0 120 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="fBlur" x="-20%" y="-50%" width="140%" height="200%">
+          <feGaussianBlur stdDeviation="3"/>
+        </filter>
+        <linearGradient id="gEKG" x1="0" y1="28" x2="110" y2="28" gradientUnits="userSpaceOnUse">
+          <stop offset="0%"   stop-color="#0EA5E9" stop-opacity="0.3"/>
+          <stop offset="50%"  stop-color="#38BDF8"/>
+          <stop offset="100%" stop-color="#67E8F9"/>
+        </linearGradient>
+        <radialGradient id="gDot" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"   stop-color="#67E8F9"/>
+          <stop offset="100%" stop-color="#0EA5E9"/>
+        </radialGradient>
+      </defs>
+      <polyline points="0,28 12,28 22,6 32,50 42,6 52,28 66,28 76,16 84,28 110,28"
+        stroke="#0EA5E9" stroke-width="7"
+        stroke-linecap="round" stroke-linejoin="round"
+        filter="url(#fBlur)" class="ekg-glow-line"/>
+      <polyline points="0,28 12,28 22,6 32,50 42,6 52,28 66,28 76,16 84,28 110,28"
+        stroke="url(#gEKG)" stroke-width="3"
+        stroke-linecap="round" stroke-linejoin="round"
+        class="ekg-main-line"/>
+      <circle cx="110" cy="28" r="7" fill="#0EA5E9" class="ekg-dot-halo"/>
+      <circle cx="110" cy="28" r="4.5" fill="url(#gDot)" class="ekg-dot-fill"/>
+      <circle cx="110" cy="28" r="2" fill="white" class="ekg-dot-white"/>
+    </svg>
+    <div class="logo-wordmark">
+      <p class="logo-title">
+        Medi<span class="gradient-text">Click</span> <span class="gradient-text">AI</span>
+      </p>
+      <p class="logo-sub">PLATAFORMA MÉDICA</p>
+    </div>
+  </div>
+
+  <!-- BADGE -->
+  <div class="badge">
+    <div class="badge-dot"></div>
+    Lanzamiento próximo
+  </div>
+
+  <!-- HERO -->
+  <h1>Tu plataforma,<br><em>perfectamente</em> configurada.</h1>
+
+  <p class="subtitle">
+    Un SaaS que te permite llevar de manera práctica el control de
+    <strong>citas y calendario inteligente</strong>,
+    <strong>expedientes clínicos digitales</strong>,
+    <strong>control de accesos por roles</strong>,
+    <strong>control de ingresos con IA</strong> y mucho más.
+    <span class="todo">Todo en un solo lugar.</span>
+  </p>
+
+  <!-- COUNTDOWN -->
+  <div class="countdown">
+    <div class="countdown-item">
+      <span class="countdown-num" id="days">00</span>
+      <span class="countdown-label">Días</span>
+    </div>
+    <div class="countdown-sep">:</div>
+    <div class="countdown-item">
+      <span class="countdown-num" id="hours">00</span>
+      <span class="countdown-label">Horas</span>
+    </div>
+    <div class="countdown-sep">:</div>
+    <div class="countdown-item">
+      <span class="countdown-num" id="minutes">00</span>
+      <span class="countdown-label">Min</span>
+    </div>
+    <div class="countdown-sep">:</div>
+    <div class="countdown-item">
+      <span class="countdown-num" id="seconds">00</span>
+      <span class="countdown-label">Seg</span>
+    </div>
+  </div>
+
+  <!-- FORM -->
+  <div class="notify-form" id="notifyForm">
+    <input class="notify-input" type="email" id="emailInput" placeholder="tu@correo.com"/>
+    <button class="notify-btn" onclick="submitEmail()">Notifícame →</button>
+  </div>
+  <div class="success-msg" id="successMsg">✓ ¡Listo! Te avisamos cuando lancemos.</div>
+
+  <!-- PILLS -->
+  <div class="features">
+    <div class="feature-pill">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="4" width="18" height="18" rx="2"/>
+        <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+        <line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+      Agenda inteligente
+    </div>
+    <div class="feature-pill">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+      </svg>
+      Expediente clínico
+    </div>
+    <div class="feature-pill">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="8" r="4"/>
+        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+      </svg>
+      Control de accesos
+    </div>
+    <div class="feature-pill">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
+      Control de ingresos
+    </div>
+    <div class="feature-pill">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/>
+      </svg>
+      IA integrada
+    </div>
+    <div class="feature-pill">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="1" x2="12" y2="23"/>
+        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+      </svg>
+      Colecturía y reportes
+    </div>
+  </div>
+
+</div>
+
+<div class="footer-note">© 2026 MediClick AI · El Salvador</div>
+
+<script>
+  // Partículas
+  const pc = document.getElementById('particles');
+  const isMobile = window.innerWidth < 480;
+  const count = isMobile ? 10 : 18;
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.cssText = `left:${Math.random()*100}%;top:${20+Math.random()*70}%;` +
+      `--dur:${4+Math.random()*6}s;--delay:${Math.random()*8}s;` +
+      `width:${1+Math.random()*2}px;height:${1+Math.random()*2}px;opacity:0;`;
+    pc.appendChild(p);
+  }
+
+  // Countdown
+  const launchDate = new Date('2026-07-01T00:00:00');
+  function pad(n) { return String(n).padStart(2,'0'); }
+  function tick() {
+    const d = launchDate - new Date();
+    if (d <= 0) {
+      ['days','hours','minutes','seconds'].forEach(id => document.getElementById(id).textContent = '00');
+      return;
+    }
+    document.getElementById('days').textContent    = pad(Math.floor(d / 86400000));
+    document.getElementById('hours').textContent   = pad(Math.floor((d % 86400000) / 3600000));
+    document.getElementById('minutes').textContent = pad(Math.floor((d % 3600000) / 60000));
+    document.getElementById('seconds').textContent = pad(Math.floor((d % 60000) / 1000));
+  }
+  tick(); setInterval(tick, 1000);
+
+  // Email
+  function submitEmail() {
+    const input = document.getElementById('emailInput');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value.trim())) {
+      input.style.borderColor = 'rgba(239,68,68,0.5)';
+      setTimeout(() => input.style.borderColor = '', 2000);
+      return;
+    }
+    document.getElementById('notifyForm').style.display = 'none';
+    document.getElementById('successMsg').style.display = 'block';
+  }
+  document.getElementById('emailInput').addEventListener('keypress', e => {
+    if (e.key === 'Enter') submitEmail();
+  });
+</script>
+</body>
+</html>
